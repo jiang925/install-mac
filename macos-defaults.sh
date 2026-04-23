@@ -10,6 +10,18 @@ set -euo pipefail
 
 [[ "$(uname -s)" == "Darwin" ]] || { echo "macOS only."; exit 1; }
 
+is_vm() {
+  local model
+  model="$(sysctl -n hw.model 2>/dev/null || true)"
+  if [[ "$model" =~ ^(VMware|Parallels|VirtualMachine|VirtualBox|QEMU) ]]; then
+    return 0
+  fi
+  if ioreg -l 2>/dev/null | grep -qi 'VirtualMachine'; then
+    return 0
+  fi
+  return 1
+}
+
 echo "==> Applying macOS defaults"
 
 # --- Keyboard ---------------------------------------------------------------
@@ -34,10 +46,14 @@ defaults write com.apple.screencapture type -string "png"
 defaults write com.apple.screencapture disable-shadow -bool true
 
 # --- Dock -------------------------------------------------------------------
-defaults write com.apple.dock autohide -bool true
-defaults write com.apple.dock autohide-delay -float 0
-defaults write com.apple.dock show-recents -bool false
-defaults write com.apple.dock minimize-to-application -bool true
+if ! is_vm; then
+  defaults write com.apple.dock autohide -bool true
+  defaults write com.apple.dock autohide-delay -float 0
+  defaults write com.apple.dock show-recents -bool false
+  defaults write com.apple.dock minimize-to-application -bool true
+else
+  echo "  dock: skipped on VM"
+fi
 
 # --- Trackpad ---------------------------------------------------------------
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true

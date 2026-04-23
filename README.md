@@ -22,8 +22,11 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jiang925/install-mac/mai
 1. `xcode-select --install` (waits for the GUI dialog to complete)
 2. Install Homebrew (Apple Silicon + Intel paths)
 3. `brew bundle` against [`Brewfile`](./Brewfile) — CLI tools, casks, mas apps
-4. `gh auth login --web` — opens a browser for OAuth, token lands in macOS Keychain
-5. `gh auth setup-git` — git uses the gh token for HTTPS clones
+4. Install [`configs/ghostty.config`](./configs/ghostty.config) into both `~/.config/ghostty/config` and the Ghostty app-support path — read by both `ghostty` and `cmux`
+5. `gh auth login --web` — opens a browser for OAuth, token lands in macOS Keychain
+6. `gh auth setup-git` — git uses the gh token for HTTPS clones
+
+Both `bootstrap.sh` and `macos-defaults.sh` detect VMs (VMware/Parallels/VirtualBox/QEMU) via `sysctl hw.model` + `ioreg`. On VMs the following are skipped: `1password`, `1password-cli`, `logi-options-plus`, and the Dock autohide tweaks — they're either irrelevant on a guest or better handled from the host.
 
 **Stage 2 — private, handed off to chezmoi**
 6. `chezmoi init --apply jiang925` — clones the private dotfiles repo
@@ -41,6 +44,7 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jiang925/install-mac/mai
 | SSH private keys | Private dotfiles repo | age encryption (key is in 1Password) |
 | Age key | 1Password + `~/.config/age/chezmoi.txt` (mode 600) | 1Password master password + FileVault |
 | GitHub auth | macOS Keychain | Keychain + Touch ID |
+| VM mode (guest) | Brewfile + scripts gate on `is_vm` | No 1Password, no Logi Options+, no work credentials installed — guest stays disposable |
 
 The chain of trust collapses to **one** thing: your 1Password master password.
 Lose that, lose everything; keep that and even a full leak of the private repo only leaks encrypted blobs.

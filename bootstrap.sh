@@ -20,6 +20,7 @@ readonly RAW_URL="https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/$
 readonly LOG_FILE="${TMPDIR:-/tmp}/install-mac-$(date +%Y%m%d-%H%M%S).log"
 
 HOMEBREW_PREFIX=""
+IS_VM=0
 
 # --- Logging ----------------------------------------------------------------
 if [[ -t 1 ]]; then
@@ -61,6 +62,18 @@ detect_arch() {
     *) die "Unsupported architecture: $arch" ;;
   esac
   log "Architecture: $arch — Homebrew prefix: $HOMEBREW_PREFIX"
+}
+
+is_vm() {
+  local model
+  model="$(sysctl -n hw.model 2>/dev/null || true)"
+  if [[ "$model" =~ ^(VMware|Parallels|VirtualMachine|VirtualBox|QEMU) ]]; then
+    return 0
+  fi
+  if ioreg -l 2>/dev/null | grep -qi 'VirtualMachine'; then
+    return 0
+  fi
+  return 1
 }
 
 require_network() {
@@ -111,6 +124,17 @@ run_brew_bundle() {
   success "Brewfile applied"
 }
 
+install_terminal_config() {
+  step "Terminal config (ghostty / cmux)"
+  local cfg_dir="${HOME}/.config/ghostty"
+  local app_dir="${HOME}/Library/Application Support/com.mitchellh.ghostty"
+  mkdir -p "$cfg_dir" "$app_dir"
+  info "Fetching ghostty config from ${RAW_URL}/configs/ghostty.config"
+  curl -fsSL "${RAW_URL}/configs/ghostty.config" -o "${cfg_dir}/config"
+  cp "${cfg_dir}/config" "${app_dir}/config.ghostty"
+  success "Ghostty config installed (read by both ghostty and cmux)"
+}
+
 github_auth() {
   step "GitHub auth (for private dotfiles clone)"
   if gh auth status &>/dev/null; then
@@ -159,6 +183,12 @@ BANNER
   log "Log file: $LOG_FILE"
   require_macos
   detect_arch
+  if is_vm; then
+    warn "VM detected (hw.model=$(sysctl -n hw.model)) — sensitive apps will be skipped"
+    IS_VM=1
+  else
+    IS_VM=0
+  fi
   require_network
 
   if ! confirm "Begin bootstrap? (sudo will be requested)"; then
@@ -170,6 +200,7 @@ BANNER
   install_xcode_clt
   install_homebrew
   run_brew_bundle
+  install_terminal_config
   github_auth
   run_chezmoi
   apply_macos_defaults
