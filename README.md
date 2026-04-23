@@ -33,9 +33,39 @@ Both `bootstrap.sh` and `macos-defaults.sh` detect VMs (VMware/Parallels/Virtual
 6. `chezmoi init --apply jiang925` — clones the private dotfiles repo
 7. chezmoi's `run_once_before_01-setup-1password.sh.tmpl` fetches the age key from 1Password
 8. Age-encrypted SSH keys get decrypted; all dotfiles applied
+9. `~/.zshrc` is rewritten by chezmoi's `modify_dot_zshrc` upsert (see *Zsh layout* below)
 
 **Stage 3 — macOS defaults** ([`macos-defaults.sh`](./macos-defaults.sh))
 - Faster keyboard repeat, screenshot location, Finder, Dock, trackpad
+
+## Zsh layout
+
+`~/.zshrc` is composed from three sources, all merged by chezmoi's `modify_dot_zshrc`
+upsert script (in the dotfiles repo). The script idempotently maintains a single
+marker block at the top of the file and passes everything else through verbatim,
+so MDM-injected blocks (your company's MDM shell-profile blocks) and any hand-edits
+survive every `chezmoi apply`.
+
+```
+~/.zshrc
+├── # >>> chezmoi-managed >>>           ← injected by modify_dot_zshrc, idempotent
+│   source ~/.config/zsh/public.zsh    ← pulled from THIS repo (zsh/zshrc.public.zsh)
+│   source ~/.zshrc.work               ← exists only on work machines
+├── # <<< chezmoi-managed <<<
+├── ### BEGIN--Company MDM Shell ...     ← MDM, written by company script, preserved
+├── # >>> company-tool setup ...              ← MDM, preserved
+└── # tool init                          ← anything that depends on MDM PATH lives here
+```
+
+Three tiers of content:
+
+| File | Lives where | Contents | Synced |
+|---|---|---|---|
+| [`zsh/zshrc.public.zsh`](./zsh/zshrc.public.zsh) | Public repo (this one) | OMZ + p10k + plugins + lazy-loaders (pyenv/goenv) + portable personal tooling | All machines, via chezmoi external |
+| `~/.zshrc.work` | Hand-maintained, NOT in any repo | Work-only env (work-specific tools, credentials, language managers) | Manual; absent on personal/VM machines |
+| MDM blocks in `~/.zshrc` | Injected by company scripts | MDM-managed shell-profile blocks | Managed by IT, untouched by chezmoi |
+
+The same pattern (`modify_` + external) can hold for `~/.zprofile` later if needed.
 
 ## Security model
 
