@@ -57,6 +57,14 @@ fi
 defaults write com.apple.driver.AppleBluetoothMultitouch.trackpad Clicking -bool true
 defaults write NSGlobalDomain com.apple.mouse.tapBehavior -int 1
 
+# --- Mouse scroll direction (VM only) ---------------------------------------
+# On physical Macs, logi-options-plus owns scroll direction per-device. On VMs
+# we skip Logi+ (no hardware to bind to), so flip the global "natural" toggle
+# off — wheel mice feel reversed under macOS's natural-scroll default.
+if is_vm; then
+  defaults write NSGlobalDomain com.apple.swipescrolldirection -bool false
+fi
+
 # --- Safety net -------------------------------------------------------------
 # Disable the "Are you sure you want to open this app?" dialog every time
 defaults write com.apple.LaunchServices LSQuarantine -bool false

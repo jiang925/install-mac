@@ -51,7 +51,6 @@ cask "cmux"           # Ghostty-based terminal with vertical tabs
 cask "obsidian"
 cask "alfred"
 cask "dropbox"
-cask "setapp"
 
 # --- Dev (casks) ------------------------------------------------------------
 cask "visual-studio-code"
@@ -69,4 +68,5 @@ unless is_vm
   cask "1password"
   cask "1password-cli"
   cask "logi-options-plus" # replaces older "Logitech Options"
+  cask "setapp"            # devmate.com CDN often unreachable from VMs
 end
