@@ -211,11 +211,11 @@ BANNER
 
   cat <<'NEXT'
 Next steps (manual, can't be scripted):
-  - Sign in: iCloud, Setapp, Alfred (license in 1Password), JetBrains Toolbox
+  - Sign in: iCloud, Setapp, Alfred (license in 1Password)
   - VS Code: turn on Settings Sync
   - Alfred: set clipboard history shortcut, swap Spotlight binding
   - Moom: set trigger key + grid
-  - iTerm: import Dracula theme, set as default profile
+  - cmux: pin to dock; theme already set via configs/ghostty.config
   - Open a new terminal so the new zshrc loads
   - Verify SSH: ssh -T git@github.com
   - Verify dotfiles: ls -la ~/.ssh

@@ -66,10 +66,9 @@ The script can't sign you in to apps. After it finishes:
 - iCloud (System Settings)
 - 1Password (sign in once; then `op signin` for the CLI)
 - Setapp, Alfred 5 (license keys are in 1Password)
-- JetBrains Toolbox (then install IntelliJ/RubyMine/WebStorm from inside it)
 - Moom (set trigger key + grid)
 - VS Code (turn on Settings Sync)
-- iTerm: import the [Dracula theme](https://draculatheme.com/iterm/), set as default profile
+- cmux: pin to dock; theme is already set via `configs/ghostty.config`
 - Alfred: set clipboard history shortcut, swap Spotlight binding
 - Old machine teardown: see `MERGE-OTHER-SERVERS.md` in dotfiles repo
 
