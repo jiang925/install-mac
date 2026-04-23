@@ -183,6 +183,40 @@ run_chezmoi() {
   success "chezmoi applied"
 }
 
+# VM-only fallback: on physical Macs, chezmoi's modify_dot_zshrc upsert handles
+# the marker block and .chezmoiexternal.toml fetches public.zsh. On VMs we skip
+# chezmoi entirely (no private dotfiles, no gh auth), so bootstrap.sh has to do
+# both jobs itself: pull public.zsh, prepend a marker block to ~/.zshrc.
+install_zsh_public_on_vm() {
+  step "zsh framework (VM — no chezmoi)"
+  local cfg_dir="${HOME}/.config/zsh"
+  local zsh_pub="${cfg_dir}/public.zsh"
+  local zshrc="${HOME}/.zshrc"
+  local marker_begin="# >>> install-mac (VM, no chezmoi) >>>"
+  local marker_end="# <<< install-mac (VM, no chezmoi) <<<"
+
+  mkdir -p "$cfg_dir"
+  info "Fetching public.zsh from ${RAW_URL}/zsh/zshrc.public.zsh"
+  curl -fsSL "${RAW_URL}/zsh/zshrc.public.zsh" -o "$zsh_pub"
+
+  if [[ -f "$zshrc" ]] && grep -qF "$marker_begin" "$zshrc"; then
+    success "~/.zshrc marker already present — skipping prepend"
+    return
+  fi
+
+  info "Prepending marker block to ~/.zshrc"
+  local block="${marker_begin}
+[[ -r \"\$HOME/.config/zsh/public.zsh\" ]] && source \"\$HOME/.config/zsh/public.zsh\"
+${marker_end}
+"
+  # Direct file-to-file concat preserves original trailing newline (command
+  # substitution would strip it).
+  printf '%s' "$block" > "${zshrc}.new"
+  [[ -f "$zshrc" ]] && cat "$zshrc" >> "${zshrc}.new"
+  mv "${zshrc}.new" "$zshrc"
+  success "~/.zshrc sources public.zsh"
+}
+
 apply_macos_defaults() {
   step "macOS defaults"
   local script_url="${RAW_URL}/macos-defaults.sh"
@@ -226,15 +260,31 @@ BANNER
   run_brew_bundle
   install_terminal_config
   install_omz
-  github_auth
-  run_chezmoi
+  if (( IS_VM )); then
+    info "Skipping gh auth + chezmoi on VM (no private dotfiles, no Apple/GitHub identity)"
+    install_zsh_public_on_vm
+  else
+    github_auth
+    run_chezmoi
+  fi
   apply_macos_defaults
 
   printf '\n%s%s---------------------------------------------%s\n' "$C_GREEN" "$C_BOLD" "$C_RESET"
   success "Bootstrap complete. Log: $LOG_FILE"
   printf '%s%s---------------------------------------------%s\n\n' "$C_GREEN" "$C_BOLD" "$C_RESET"
 
-  cat <<'NEXT'
+  if (( IS_VM )); then
+    cat <<'NEXT'
+Next steps on this VM:
+  - Open a new terminal so the new zshrc loads
+  - Verify scroll direction feels right (set by macos-defaults.sh on VMs)
+  - VM is intentionally Apple-ID-free / 1Password-free / dotfiles-free —
+    keep it that way for experimental and untrusted workloads
+  - To SSH out from this VM, generate a per-VM keypair with `ssh-keygen`
+    and add the pubkey wherever needed (do NOT copy your main id_rsa here)
+NEXT
+  else
+    cat <<'NEXT'
 Next steps (manual, can't be scripted):
   - Sign in: iCloud, Setapp, Alfred (license in 1Password)
   - VS Code: turn on Settings Sync
@@ -245,6 +295,7 @@ Next steps (manual, can't be scripted):
   - Verify SSH: ssh -T git@github.com
   - Verify dotfiles: ls -la ~/.ssh
 NEXT
+  fi
 }
 
 main "$@"
