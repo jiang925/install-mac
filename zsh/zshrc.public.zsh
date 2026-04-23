@@ -6,9 +6,10 @@
 #   - Oh My Zsh + powerlevel10k + plugins (theme, prompt, completion)
 #   - Lazy-loaders for pyenv / goenv (PATH-only at startup; eval on first call)
 #   - Ruby (Homebrew) on PATH
+#   - Portable personal tooling (Antigravity PATH, ssh mouse-tracking reset)
 #
 # What does NOT live here:
-#   - Personal secrets (none currently)
+#   - Secrets (any) — keep out of any repo
 #   - Work-only env (work-specific tools and aliases) → ~/.zshrc.work
 #   - MDM-injected blocks (your company's MDM shell-profile) → not in this repo
 
@@ -43,7 +44,9 @@ plugins=(
   history-substring-search
 )
 
-source "$ZSH/oh-my-zsh.sh"
+# Guard: source only if OMZ is actually installed (allows chezmoi-only usage
+# on a host that hasn't run install-mac/bootstrap.sh).
+[[ -r "$ZSH/oh-my-zsh.sh" ]] && source "$ZSH/oh-my-zsh.sh"
 
 # --- Languages --------------------------------------------------------------
 # Homebrew Ruby (override system Ruby)
@@ -65,4 +68,16 @@ goenv() {
   unfunction goenv
   eval "$(command goenv init -)"
   goenv "$@"
+}
+
+# --- Personal tools ---------------------------------------------------------
+# Antigravity (Google's agentic IDE) — installed under $HOME, portable
+[[ -d "$HOME/.antigravity/antigravity/bin" ]] && export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
+
+# Reset mouse tracking after SSH exits
+# Fixes: SSH'ing into a host with `tmux mouse on` can leave local terminal
+# in mouse-tracking mode after disconnect, producing garbage chars on click.
+ssh() {
+  command ssh "$@"
+  printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l'
 }
