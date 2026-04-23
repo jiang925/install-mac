@@ -122,7 +122,8 @@ run_brew_bundle() {
   info "Fetching Brewfile from ${RAW_URL}/Brewfile"
   curl -fsSL "${RAW_URL}/Brewfile" -o "$brewfile"
   info "Running brew bundle (this takes a while)"
-  brew bundle --file="$brewfile" --no-lock
+  # NOTE: --no-lock was removed when Homebrew dropped Brewfile.lock.json (~2024).
+  brew bundle --file="$brewfile"
   success "Brewfile applied"
 }
 
