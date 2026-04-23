@@ -36,6 +36,9 @@ POWERLEVEL9K_SHORTEN_DIR_LENGTH=1
 ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets pattern cursor root line)
 ZSH_HIGHLIGHT_PATTERNS=('rm -rf *' 'fg=white,bold,bg=red')
 
+# Skip "dirty" check for untracked files — major speedup in large monorepos
+DISABLE_UNTRACKED_FILES_DIRTY="true"
+
 plugins=(
   git
   macos
@@ -44,9 +47,22 @@ plugins=(
   history-substring-search
 )
 
+# zsh-autosuggestions tuning
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#6272a4'  # Dracula comment color
+ZSH_AUTOSUGGEST_MANUAL_REBIND=1               # cuts perf cost of widget rebinding
+
 # Guard: source only if OMZ is actually installed (allows chezmoi-only usage
 # on a host that hasn't run install-mac/bootstrap.sh).
 [[ -r "$ZSH/oh-my-zsh.sh" ]] && source "$ZSH/oh-my-zsh.sh"
+
+# Fix: p10k's async prompt reset (`zle .reset-prompt`) clears region_highlight,
+# which kills the autosuggestion shadow color. Re-apply on every redraw.
+_fix_autosuggest_highlight() {
+  if (( ${+functions[_zsh_autosuggest_highlight_apply]} )); then
+    _zsh_autosuggest_highlight_apply
+  fi
+}
+zle -N zle-line-pre-redraw _fix_autosuggest_highlight
 
 # --- Languages --------------------------------------------------------------
 # Homebrew Ruby (override system Ruby)
