@@ -23,8 +23,9 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/jiang925/install-mac/mai
 2. Install Homebrew (Apple Silicon + Intel paths)
 3. `brew bundle` against [`Brewfile`](./Brewfile) — CLI tools, casks, mas apps
 4. Install [`configs/ghostty.config`](./configs/ghostty.config) into both `~/.config/ghostty/config` and the Ghostty app-support path — read by both `ghostty` and `cmux`
-5. `gh auth login --web` — opens a browser for OAuth, token lands in macOS Keychain
-6. `gh auth setup-git` — git uses the gh token for HTTPS clones
+5. Install Oh My Zsh + `powerlevel10k` theme + `zsh-autosuggestions` plugin (`KEEP_ZSHRC=yes` so chezmoi can own `~/.zshrc`)
+6. `gh auth login --web` — opens a browser for OAuth, token lands in macOS Keychain
+7. `gh auth setup-git` — git uses the gh token for HTTPS clones
 
 Both `bootstrap.sh` and `macos-defaults.sh` detect VMs (VMware/Parallels/VirtualBox/QEMU) via `sysctl hw.model` + `ioreg`. On VMs the following are skipped: `1password`, `1password-cli`, `logi-options-plus`, and the Dock autohide tweaks — they're either irrelevant on a guest or better handled from the host.
 

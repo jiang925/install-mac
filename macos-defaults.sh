@@ -11,14 +11,12 @@ set -euo pipefail
 [[ "$(uname -s)" == "Darwin" ]] || { echo "macOS only."; exit 1; }
 
 is_vm() {
+  [[ "$(sysctl -n kern.hv_vmm_present 2>/dev/null)" == "1" ]] && return 0
   local model
   model="$(sysctl -n hw.model 2>/dev/null || true)"
-  if [[ "$model" =~ ^(VMware|Parallels|VirtualMachine|VirtualBox|QEMU) ]]; then
-    return 0
-  fi
-  if ioreg -l 2>/dev/null | grep -qi 'VirtualMachine'; then
-    return 0
-  fi
+  [[ "$model" =~ ^(VirtualMac|VMware|Parallels|VirtualBox|QEMU) ]] && return 0
+  sysctl -n machdep.cpu.brand_string 2>/dev/null | grep -qi 'qemu\|virtual' && return 0
+  ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | grep -qi 'virtual\|parallels\|vmware' && return 0
   return 1
 }
 

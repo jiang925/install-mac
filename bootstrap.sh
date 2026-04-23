@@ -65,14 +65,16 @@ detect_arch() {
 }
 
 is_vm() {
+  # 1. Apple's official "I am running as a guest" sysctl (Apple-VZ, Parallels, VMware Fusion on Apple Silicon)
+  [[ "$(sysctl -n kern.hv_vmm_present 2>/dev/null)" == "1" ]] && return 0
+  # 2. Model-string fallback (UTM/QEMU and older hypervisors)
   local model
   model="$(sysctl -n hw.model 2>/dev/null || true)"
-  if [[ "$model" =~ ^(VMware|Parallels|VirtualMachine|VirtualBox|QEMU) ]]; then
-    return 0
-  fi
-  if ioreg -l 2>/dev/null | grep -qi 'VirtualMachine'; then
-    return 0
-  fi
+  [[ "$model" =~ ^(VirtualMac|VMware|Parallels|VirtualBox|QEMU) ]] && return 0
+  # 3. CPU brand fallback (Intel UTM/QEMU)
+  sysctl -n machdep.cpu.brand_string 2>/dev/null | grep -qi 'qemu\|virtual' && return 0
+  # 4. IORegistry fallback (catch-all)
+  ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | grep -qi 'virtual\|parallels\|vmware' && return 0
   return 1
 }
 
@@ -133,6 +135,27 @@ install_terminal_config() {
   curl -fsSL "${RAW_URL}/configs/ghostty.config" -o "${cfg_dir}/config"
   cp "${cfg_dir}/config" "${app_dir}/config.ghostty"
   success "Ghostty config installed (read by both ghostty and cmux)"
+}
+
+install_omz() {
+  step "Oh My Zsh + powerlevel10k + zsh-autosuggestions"
+  if [[ -d "${HOME}/.oh-my-zsh" ]]; then
+    success "OMZ already installed"
+  else
+    info "Installing Oh My Zsh (KEEP_ZSHRC=yes — won't touch ~/.zshrc)"
+    RUNZSH=no CHSH=no KEEP_ZSHRC=yes \
+      sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+  fi
+  local custom="${ZSH_CUSTOM:-${HOME}/.oh-my-zsh/custom}"
+  if [[ ! -d "${custom}/themes/powerlevel10k" ]]; then
+    info "Cloning powerlevel10k"
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${custom}/themes/powerlevel10k"
+  fi
+  if [[ ! -d "${custom}/plugins/zsh-autosuggestions" ]]; then
+    info "Cloning zsh-autosuggestions"
+    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions "${custom}/plugins/zsh-autosuggestions"
+  fi
+  success "OMZ + p10k + autosuggestions ready"
 }
 
 github_auth() {
@@ -201,6 +224,7 @@ BANNER
   install_homebrew
   run_brew_bundle
   install_terminal_config
+  install_omz
   github_auth
   run_chezmoi
   apply_macos_defaults

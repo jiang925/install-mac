@@ -9,10 +9,12 @@
 # relevant; remote access from host. Brewfile is a Ruby DSL, so we can
 # detect VM at evaluation time and skip those casks accordingly.
 def is_vm
+  return true if `sysctl -n kern.hv_vmm_present 2>/dev/null`.strip == "1"
   model = `sysctl -n hw.model 2>/dev/null`.force_encoding("BINARY").strip
-  return true if model.match?(/VMware|Parallels|VirtualMachine|VirtualBox|QEMU/)
+  return true if model.match?(/VirtualMac|VMware|Parallels|VirtualBox|QEMU/)
+  return true if `sysctl -n machdep.cpu.brand_string 2>/dev/null`.force_encoding("BINARY").match?(/QEMU|Virtual/i)
   # ioreg's output is not always valid UTF-8, so force binary before regex match.
-  return true if `ioreg -l 2>/dev/null`.force_encoding("BINARY").match?(/VirtualMachine/)
+  return true if `ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null`.force_encoding("BINARY").match?(/Virtual|Parallels|VMware/i)
   false
 end
 
