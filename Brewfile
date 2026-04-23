@@ -58,15 +58,16 @@ cask "visual-studio-code"
 # --- Mac utilities (casks) --------------------------------------------------
 cask "flux-app"          # f.lux screen warmth
 
-# --- Mac App Store ----------------------------------------------------------
-mas "Moom",        id: 419330170
-mas "iStat Menus", id: 1319778037
-mas "WeChat",      id: 836500024
-
 # --- Physical-Mac-only ------------------------------------------------------
+# Skipped on VMs to keep guests Apple-ID-free (mas requires App Store sign-in,
+# which makes the VM a 2FA endpoint and ties it to iCloud / payment / Find My
+# — bad combo with experimental or untrusted workloads).
 unless is_vm
   cask "1password"
   cask "1password-cli"
   cask "logi-options-plus" # replaces older "Logitech Options"
   cask "setapp"            # devmate.com CDN often unreachable from VMs
+  mas "Moom",        id: 419330170
+  mas "iStat Menus", id: 1319778037
+  mas "WeChat",      id: 836500024
 end
